@@ -96,15 +96,35 @@ router.put('/:id', auth, async (req, res) => {
   res.json(contact)
 
  } catch (e) {
-
+  console.error(e.message)
+  res.status(500).send('Server Error')
  }
 });
 
 // @route DELETE api/contacts/:id
 // @description Delete contact
 // @access Private
-router.delete('/:id', (req, res) => {
- res.send('Delete contact contact')
+router.delete('/:id', auth, async (req, res) => {
+ try {
+  let contact = await Contact.findById(req.params.id)
+
+  if (!contact) {
+   return res.status(400).json({ msg: 'Contact not found' })
+  }
+
+  // Make sure user owns contact
+  if (contact.user.toString() !== req.user.id) {
+   return res.status(401).json({ msg: 'Not authorized' })
+  }
+
+  await Contact.findByIdAndRemove(req.params.id)
+
+  res.json({ msg: 'Contact Removed' })
+
+ } catch (e) {
+  console.error(e.message)
+  res.status(500).send('Server Error')
+ }
 });
 
 module.exports = router;
